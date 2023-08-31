@@ -4,9 +4,9 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
-# class Image(BaseModel):
-#     "tenant_id": str
-#     ""
+class Image(BaseModel):
+    "tenant_id": str
+    "result": str
 
 
 
