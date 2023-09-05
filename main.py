@@ -48,6 +48,6 @@ def root():
     return {"message": "Hello World"}
 
 @app.post("/images")
-def create_images(payload: dict = Body(...)):
+def create_images(image: Image):
     
-    return payload
+    return image
