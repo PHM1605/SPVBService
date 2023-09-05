@@ -53,7 +53,7 @@ def evaluate(request):
         out_img_path = os.path.join("samples", f"{img_key}_output_notok.jpg")
     cv2.imwrite(out_img_path, img)
     response["result_image_url"] = out_img_path
-    print(f"Done for {img_name}")
+    print(f"Done for {out_img_path}")
     return response
 
 
