@@ -26,7 +26,7 @@ def extract_to_image(img, response):
     img = draw_result(img, get_boxes_of_labels(result, ["SPACE"]), color=(0,0,255), put_percent=True)
     # draw nonspvb as purple
     img = draw_result(img, get_boxes_of_labels(result, ["NON_SPVB"]), color=(255,0,255), put_percent=True)
-    #img = put_text(img, response["message"], loc=[10,10])
+    img = put_text(img, response["message"], loc=[10,10])
     return img
 
 def get_boxes_of_labels(dict_labels, labels):
@@ -58,14 +58,11 @@ def put_text(img, text, loc):
     font_size = int(16/640*h)
     img_pil = Image.fromarray(img)
     draw = ImageDraw.Draw(img_pil)
-    font = ImageFont.truetype("SVN-Arial 2.ttf", font_size)
+    font = ImageFont.truetype(os.path.join("ml_utils", "fonts", "SVN-Arial 2.ttf"), font_size)
     bbox = draw.textbbox(loc, text, font=font)
     draw.rectangle(bbox, fill=(0,255,255))
     draw.text(loc, text, font=font, fill=(0,0,255))
     return np.array(img_pil)
-
-
-
 
 # count number of items from a list of items
 def count_item(item, list_items):
