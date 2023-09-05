@@ -13,7 +13,6 @@ from .analysis import (
 def evaluate(request):
     img_name = request["image_url"]
     img0 = cv2.imread(img_name)
-    print(img0)
     img = copy.deepcopy(img0)
     img_key = os.path.basename(img_name).split(".")[0]
     
@@ -55,7 +54,6 @@ def evaluate(request):
     cv2.imwrite(out_img_path, img)
     response["result_image_url"] = out_img_path
     print(f"Done for {img_name}")
-    print(response)
     return response
 
 
