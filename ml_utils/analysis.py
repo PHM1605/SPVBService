@@ -1,8 +1,8 @@
 # newest version 16.06.23: thêm thông báo số tầng phát hiện khi lỗi; chỉnh tủ combo: nếu đủ tủ sẽ cộng tầng.
 import cv2, copy, itertools, scipy, math
-from models import BoundingBox
+from .models import BoundingBox
 import numpy as np
-from indices import get_indices
+from .indices import get_indices
 
 """ Add more floor for types of fridge"""
 def add_floor_for_one_floor(boxes, index_dict, img):

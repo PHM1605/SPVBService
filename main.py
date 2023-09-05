@@ -2,21 +2,18 @@ from datetime import datetime
 from fastapi import FastAPI
 from fastapi.params import Body
 from pydantic import BaseModel
-from typing import Dict, List
+from typing import Dict, List, Union
+from ml_utils import evaluation_spvb
 
 app = FastAPI()
 
-class BoundingBox(BaseModel):
-    x1: int
-    y1: int
-    x2: int
-    y2: int
-    prob: float
-    label: int
+class Post(BaseModel):
+    title: str
+    body: str
 
 class Details(BaseModel):
-    detections: List[BoundingBox]
-    result: Dict[str, Dict[str, BoundingBox]]
+    detections: List[List[Union[int, float]]]
+    result: Dict[str, Dict[str, List[List[Union[int, float]]]]]
 
 class Reason(BaseModel):
     NON_SPVB: List[str]
@@ -48,6 +45,6 @@ def root():
     return {"message": "Hello World"}
 
 @app.post("/images")
-def create_images(image: str):
-    
-    return image
+def post_images(image: Image):
+    result = evaluation_spvb.evaluate(image.model_dump())
+    return result
