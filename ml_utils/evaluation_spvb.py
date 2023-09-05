@@ -13,6 +13,7 @@ from .analysis import (
 def evaluate(request):
     img_name = request["image_url"]
     img0 = cv2.imread(img_name)
+    print(img0)
     img = copy.deepcopy(img0)
     img_key = os.path.basename(img_name).split(".")[0]
     
@@ -47,13 +48,14 @@ def evaluate(request):
     # Extract to image and json
     img = extract_to_image(img, response)
     if response["evaluation_result"] == 1:
-        out_img_path = os.path.join("../samples", f"{img_key}_output_ok.jpg")
+        out_img_path = os.path.join("samples", f"{img_key}_output_ok.jpg")
         
     elif response["evaluation_result"] == 0:
-        out_img_path = os.path.join("../samples", f"{img_key}_output_notok.jpg")
+        out_img_path = os.path.join("samples", f"{img_key}_output_notok.jpg")
     cv2.imwrite(out_img_path, img)
     response["result_image_url"] = out_img_path
     print(f"Done for {img_name}")
+    print(response)
     return response
 
 

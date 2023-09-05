@@ -1,8 +1,6 @@
 import os, cv2, copy
 import numpy as np
 from PIL import ImageFont, ImageDraw, Image
-from .indices import get_indices
-from .models import BoundingBox
 
 def draw_result(img, boxes, color, put_percent, put_label=False):
     ret = copy.deepcopy(img)
