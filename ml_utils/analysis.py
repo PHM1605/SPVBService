@@ -136,12 +136,12 @@ def analyze_for_one_floor(boxes, index_dict, img, result_dict):
     
     if result_dict["issue"] == "":
         list_bottles = assign_shelves(boxes, index_dict, result_dict)
-        list_missing, list_nonspvb = get_list_missing_non_spvb(list_bottles, index_dict, result_dict)
+        list_missing, list_nonspvb = get_list_missing_nonspvb(list_bottles, index_dict, result_dict)
         result_dict = update_statistics(list_missing, list_nonspvb)
     return boxes, index_dict, result_dict
 
-def analyze_for_normal(boxes, index_dict, img, result_dict):
-    boxes, index_dict = add_floor_for_normal(boxes, index_dict, img, result_dict)
+def analyze_for_normal(boxes, index_dict, result_dict):
+    boxes, index_dict = add_floor_for_normal(boxes, index_dict, result_dict)
     if len(index_dict["shelf"]) == result_dict["number_of_floor"]:
         if not result_dict["consider_last_shelf"]:
             index_dict["shelf_excluded"] = [index_dict["shelf"][-1]]
@@ -159,7 +159,7 @@ def analyze_for_normal(boxes, index_dict, img, result_dict):
     
     if result_dict["issue"] == "":
         list_bottles = assign_shelves(boxes, index_dict, result_dict)
-        list_missing, list_nonspvb = get_list_missing_non_spvb(list_bottles, index_dict, result_dict)
+        list_missing, list_nonspvb = get_list_missing_nonspvb(list_bottles, index_dict, result_dict)
         result_dict = update_statistics(list_missing, list_nonspvb, result_dict)
     return result_dict
     
@@ -173,7 +173,7 @@ def analyze_for_combo(boxes, index_dict, result_dict):
     list_bottles = assign_shelves(boxes, index_dict["shelf"], index_dict["bottle"], distance_threshold=1)
     if result_dict["issue"] == "":
         list_bottles = assign_shelves(boxes, index_dict, result_dict)
-        list_missing, list_nonspvb = get_list_missing_non_spvb(list_bottles, index_dict, result_dict)
+        list_missing, list_nonspvb = get_list_missing_nonspvb(list_bottles, index_dict, result_dict)
         result_dict = update_statistics(list_missing, list_nonspvb, result_dict)
     return result_dict
 

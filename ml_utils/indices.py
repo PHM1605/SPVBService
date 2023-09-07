@@ -1,13 +1,13 @@
 # which index is of which type of products
 def get_thresholds(posm_type, type_obj):
-    if posm_type == 'vsc':
+    if posm_type == 'VSC':
         if type_obj == 'fridge':
             lower_thr, upper_thr = 84, 90
         elif type_obj == 'shelf':
             lower_thr, upper_thr = 91, 91
         elif type_obj == 'bottle':
             lower_thr, upper_thr = 0, 83
-    elif posm_type == 'rack':
+    elif posm_type == 'RACK':
         if type_obj == 'fridge':
             lower_thr, upper_thr = 86, 88
         elif type_obj == 'shelf':
@@ -17,7 +17,7 @@ def get_thresholds(posm_type, type_obj):
     return lower_thr, upper_thr
 
 def get_indices(boxes, posm_type):
-    assert posm_type in ['vsc', 'rack'], f"type of {posm_type} is not suitable"
+    assert posm_type in ['VSC', 'RACK'], f"type of {posm_type} is not suitable"
     ret_dict = {}
     
     def get_indices_helper(lower_thr, upper_thr):

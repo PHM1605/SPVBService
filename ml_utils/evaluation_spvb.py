@@ -11,7 +11,7 @@ from .analysis import (
 )
 
 def evaluate(request):
-    img_name = request["image_url"]
+    img_name = request["image_path"]
     img0 = cv2.imread(img_name)
     img = copy.deepcopy(img0)
     img_key = os.path.basename(img_name).split(".")[0]
@@ -55,5 +55,3 @@ def evaluate(request):
     response["result_image_url"] = out_img_path
     print(f"Done for {out_img_path}")
     return response
-
-
