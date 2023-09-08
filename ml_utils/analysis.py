@@ -140,8 +140,8 @@ def analyze_for_one_floor(boxes, index_dict, img, result_dict):
         result_dict = update_statistics(list_missing, list_nonspvb)
     return boxes, index_dict, result_dict
 
-def analyze_for_normal(boxes, index_dict, result_dict):
-    boxes, index_dict = add_floor_for_normal(boxes, index_dict, result_dict)
+def analyze_for_normal(boxes, index_dict, img, result_dict):
+    boxes, index_dict = add_floor_for_normal(boxes, index_dict, img, result_dict)
     if len(index_dict["shelf"]) == result_dict["number_of_floor"]:
         if not result_dict["consider_last_shelf"]:
             index_dict["shelf_excluded"] = [index_dict["shelf"][-1]]
@@ -168,7 +168,7 @@ def analyze_for_combo(boxes, index_dict, result_dict):
     if len(index_dict["shelf"]) >= 3:
         index_dict = remove_low_boxes(boxes, index_dict, index_dict["shelf"][-1])
     else:
-        result_dict["issue"] = f"LACKOFFLOOR: Tủ {master_num_floor-1} tầng + 1 ngăn combo, phát hiện {len(index_dict['shelf'])} tầng.\nVui lòng liên hệ NVBH hoặc tổng đài hỗ trợ 18001250"
+        result_dict["issue"] = f"LACKOFFLOOR: Tủ {result_dict['number_of_floor']-1} tầng + 1 ngăn combo, phát hiện {len(index_dict['shelf'])} tầng.\nVui lòng liên hệ NVBH hoặc tổng đài hỗ trợ 18001250"
         result_dict["evaluation_result"] = 0
     list_bottles = assign_shelves(boxes, index_dict["shelf"], index_dict["bottle"], distance_threshold=1)
     if result_dict["issue"] == "":

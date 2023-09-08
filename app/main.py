@@ -1,18 +1,17 @@
 from datetime import datetime
+import psycopg2
+from . import models
+from .database import engine
 from fastapi import FastAPI, HTTPException, Response, status
-from fastapi.params import Body
+from ml_utils import evaluation_spvb
+from psycopg2.extras import RealDictCursor
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings
 from typing import Dict, List, Union, Optional
-from ml_utils import evaluation_spvb
 
-
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
-class Post(BaseModel):
-    title: str
-    body: str
 
 class Details(BaseModel):
     detections: List[List[Union[int, float]]]
@@ -43,16 +42,18 @@ class Image(BaseModel):
     reasons: Reason
     tenant_id: str
 
-my_images = [{"image_id": 123, "evaluation_result": -1}, {"image_id": 23, "evaluation_result": 1}]
-
-@app.get("/images")
-def get_images(image: Image):
-    result = evaluation_spvb.evaluate(image.model_dump())
-    return result
-
 @app.post("/images", status_code=status.HTTP_201_CREATED)
 def create_images(image: Image):
     return {"data": image}
+
+@app.get("/images")
+def get_images(image: Image):
+    pass
+
+@app.get("/results")
+def get_results(image: Image):
+    result = evaluation_spvb.evaluate(image.model_dump())
+    return result
 
 @app.get("/images/{id}")
 def get_image(id:int, image: Image):
@@ -62,7 +63,7 @@ def get_image(id:int, image: Image):
     return {"image_detail": image}
 
 @app.delete("/images/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int):
+def delete_image(id: int):
     if False:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id {id} does not exist")
     return Response(status_code = status.HTTP_204_NO_CONTENT)
