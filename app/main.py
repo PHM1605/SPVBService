@@ -42,6 +42,14 @@ class Image(BaseModel):
     reasons: Reason
     tenant_id: str
 
+try: 
+    conn = psycopg2.connect(host='localhost', database="spvb_images", user="root", password="matKH4U12$$", cursor_factory=RealDictCursor)
+    cursor = conn.cursor()
+    print("Database connection was successful!")
+except Exception as error:
+    print("Connecting to database failed")
+    print("Error: ", error)
+
 @app.post("/images", status_code=status.HTTP_201_CREATED)
 def create_images(image: Image):
     return {"data": image}

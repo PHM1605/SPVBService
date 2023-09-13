@@ -18,7 +18,7 @@ def evaluate(request):
     img0 = cv2.imread(img_name)
     img = copy.deepcopy(img0)
     # if image horizontal or invalid
-    response = request
+    response = request.copy()
     response["reasons"]["OTHER"] = "PHOTOINVALID: Không tìm thấy sản phẩm của SPVB" if len(response["details"]["detections"])==0 else ""
     if response["reasons"]["OTHER"]=="": boxes, index_dict = get_boxes_and_indices(response)
     if response["reasons"]["OTHER"]=="": boxes, response = handle_too_few_case(boxes, index_dict, response)
@@ -48,6 +48,7 @@ def evaluate(request):
         
     # Extract to image and json
     img = extract_to_image(img, response)
+    response.pop("message")
     cv2.imwrite(response["result_image_path"], img)
     print(f"Done for {response['result_image_path']}")
     return response
