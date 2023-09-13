@@ -4,6 +4,7 @@ from . import models
 from .database import engine
 from fastapi import FastAPI, HTTPException, Response, status
 from ml_utils import evaluation_spvb
+from yolo_extract import extract_detection
 from psycopg2.extras import RealDictCursor
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings
@@ -42,6 +43,12 @@ class Image(BaseModel):
     reasons: Reason
     tenant_id: str
 
+class ImageFolderRequest(BaseModel):
+    img_dir: str # '../samples/images/'
+    img_size: int # 640
+    extensions: List[str] # ["*.jpg", "*.png", "*.jpeg"]
+    model: str # 'rack0821.pt'
+
 try: 
     conn = psycopg2.connect(host='localhost', database="spvb_images", user="root", password="matKH4U12$$", cursor_factory=RealDictCursor)
     cursor = conn.cursor()
@@ -58,10 +65,15 @@ def create_images(image: Image):
 def get_images(image: Image):
     pass
 
+@app.get("/json")
+def get_json(img_folder: ImageFolderRequest):
+    response = extract_detection.extract(img_folder.model_dump())
+    return response
+
 @app.get("/results")
 def get_results(image: Image):
-    result = evaluation_spvb.evaluate(image.model_dump())
-    return result
+    response = evaluation_spvb.evaluate(image.model_dump())
+    return response
 
 @app.get("/images/{id}")
 def get_image(id:int, image: Image):
