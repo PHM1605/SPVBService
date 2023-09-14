@@ -13,9 +13,8 @@ from .analysis import (
 )
 
 def evaluate(request):
-
-    img_name = request['image_path']
-    img0 = cv2.imread(img_name)
+    img_name = os.path.basename(request["image_path"])
+    img0 = cv2.imread( request['image_path'])
     img = copy.deepcopy(img0)
     # if image horizontal or invalid
     response = request.copy()
@@ -49,6 +48,7 @@ def evaluate(request):
     # Extract to image and json
     img = extract_to_image(img, response)
     response.pop("message")
+    response["result_image_path"] = os.path.join("samples/results", img_name)
     cv2.imwrite(response["result_image_path"], img)
     print(f"Done for {response['result_image_path']}")
     return response

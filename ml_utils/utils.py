@@ -1,5 +1,6 @@
 import os, cv2, copy
 import numpy as np
+import pandas as pd
 from PIL import ImageFont, ImageDraw, Image
 
 def draw_result(img, boxes, color, put_percent, put_label=False):
@@ -82,3 +83,19 @@ def search_bounding_boxes(boxes, label):
         if box.label == label:
             ret.append([box.x1, box.y1, box.x2, box.y2])
     return ret
+
+def convert_to_list_of_reasons(reasons):
+    ret = []
+    for reason in reasons:
+        if len(reasons[reason]) > 0:
+            ret = ret + reasons[reason] if isinstance(reasons[reason], list) else ret + [reasons[reason]]
+    return ret
+
+def export_to_xlsx(response):
+    file_name = "samples/audit_result.xlsx"
+    image_names = [os.path.basename(r["image_path"]) for r in response]
+    results = [r["evaluation_result"] for r in response]
+    reasons = [convert_to_list_of_reasons(r["reasons"]) for r in response]
+    df = pd.DataFrame.from_dict({"image_name": image_names, "result": results, "reason": reasons})
+    df.to_excel(file_name, sheet_name="Sheet1", index=False)
+    return file_name

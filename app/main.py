@@ -4,7 +4,7 @@ from . import models
 from .database import engine
 from fastapi import FastAPI, HTTPException, Response, status
 from ml_utils import evaluation_spvb
-from yolo_extract import extract_detection
+from ml_utils.utils import export_to_xlsx
 from psycopg2.extras import RealDictCursor
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings
@@ -23,7 +23,7 @@ class Reason(BaseModel):
     SPACE: List[str]
     OTHER: str
 
-class Image(BaseModel):
+class ImageResult(BaseModel):
     classes: List[str]
     consider_full_posm: int = 0
     consider_last_floor: int = 1
@@ -43,12 +43,6 @@ class Image(BaseModel):
     reasons: Reason
     tenant_id: str
 
-class ImageFolderRequest(BaseModel):
-    img_dir: str # '../samples/images/'
-    img_size: int # 640
-    extensions: List[str] # ["*.jpg", "*.png", "*.jpeg"]
-    model: str # 'rack0821.pt'
-
 try: 
     conn = psycopg2.connect(host='localhost', database="spvb_images", user="root", password="matKH4U12$$", cursor_factory=RealDictCursor)
     cursor = conn.cursor()
@@ -58,40 +52,44 @@ except Exception as error:
     print("Error: ", error)
 
 @app.post("/images", status_code=status.HTTP_201_CREATED)
-def create_images(image: Image):
-    return {"data": image}
-
-@app.get("/images")
-def get_images(image: Image):
+def create_images(image: ImageResult):
     pass
 
-@app.get("/json")
-def get_json(img_folder: ImageFolderRequest):
-    response = extract_detection.extract(img_folder.model_dump())
+@app.get("/images")
+def get_images(image: ImageResult):
+    pass
+
+@app.get("/folder_results")
+async def get_results(request: List[ImageResult]):
+    response = []
+    for i, one_img_request in enumerate(request):
+        one_img_response = evaluation_spvb.evaluate(one_img_request.model_dump())
+        response.append(one_img_response)
+    file_name = export_to_xlsx(response)
+    return f"Export to {file_name}"
+
+@app.get("/image_results")
+async def get_results(request: ImageResult):
+    response = evaluation_spvb.evaluate(request.model_dump())
     return response
 
-@app.get("/results")
-def get_results(image: Image):
-    response = evaluation_spvb.evaluate(image.model_dump())
-    return response
+# @app.get("/images/{id}")
+# def get_image(id:int, image: Image):
+#     if not image: 
+#        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"Image with id {id} was not found")
 
-@app.get("/images/{id}")
-def get_image(id:int, image: Image):
-    if not image: 
-       raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"Image with id {id} was not found")
+#     return {"image_detail": image}
 
-    return {"image_detail": image}
+# @app.delete("/images/{id}", status_code=status.HTTP_204_NO_CONTENT)
+# def delete_image(id: int):
+#     if False:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id {id} does not exist")
+#     return Response(status_code = status.HTTP_204_NO_CONTENT)
 
-@app.delete("/images/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_image(id: int):
-    if False:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id {id} does not exist")
-    return Response(status_code = status.HTTP_204_NO_CONTENT)
-
-@app.patch("images/{id}") 
-def update_image(id: int, image):
-    if False:
-        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail=f"Image with id {id} does not exist")
-    image_dict = image.model_dump()
+# @app.patch("images/{id}") 
+# def update_image(id: int, image):
+#     if False:
+#         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail=f"Image with id {id} does not exist")
+#     image_dict = image.model_dump()
     
-    return {"message": "Updated image"}
+#     return {"message": "Updated image"}

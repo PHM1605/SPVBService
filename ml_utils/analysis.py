@@ -197,29 +197,28 @@ def handle_too_few_case(boxes, index_dict, result_dict):
         result_dict["issue"] = "PHOTOINVALID: Không tìm thấy sản phẩm của SPVB"
         return boxes, result_dict
         
-    if len(index_dict["shelf"]) < 2:
-        if result_dict["posm_type"] == "rack":
+    if result_dict["posm_type"] == "RACK":
+        if len(index_dict["shelf"]) < 3:
             result_dict["issue"] = "PHOTOINVALID: Không tìm thấy sản phẩm của SPVB"
             result_dict["evaluation_result"] = 0
-            return boxes, result_dict
+        return boxes, result_dict
+    else: # VSC
+        if len(index_dict["fridge"]) == 0:
+            result_dict["is_full_posm"] == 0
+            if result_dict["is_one_floor"] or result_dict["consider_full_fridge"]:
+                result_dict["issue"] = "PHOTOINVALID: Không nhận dạng đủ 4 cạnh Tủ lạnh. Vui lòng chụp lại."
+                result_dict["evaluation_result"] = 0
+                return boxes, result_dict
         else:
+            result_dict["is_full_posm"] == 1
+        
+        if len(index_dict["shelf"]) < 2:
             if result_dict["classes"][boxes[index_dict["fridge"][0]].label] == "POSM_VSC_1F":
                 result_dict["is_one_floor"] = 1
             else:
                 result_dict["issue"] = "PHOTOINVALID: Không tìm thấy sản phẩm của SPVB"
                 result_dict["evaluation_result"] = 0
-                return boxes, result_dict
-            
-    # here we are sure fridge is visicooler
-    if len(index_dict["fridge"]) == 0:
-        result_dict["is_full_posm"] = 0
-        if result_dict["is_one_floor"] or result_dict["consider_full_fridge"]:
-            result_dict["issue"] = "PHOTOINVALID: Không nhận dạng đủ 4 cạnh Tủ lạnh. Vui lòng chụp lại."
-            result_dict["evaluation_result"] = 0
-    else:
-        result_dict["is_full_posm"] = 1
-
-    return boxes, result_dict
+        return boxes, result_dict
 
 def preprocessing_boxes(boxes, index_dict, posm_type):
     boxes = remove_overlap_boxes(
