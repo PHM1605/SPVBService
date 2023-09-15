@@ -2,4 +2,4 @@
 /samples
 /__pycache__
 .env
-app/__pycache__
+/app/__pycache__
