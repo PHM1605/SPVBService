@@ -1,7 +1,5 @@
 import os, cv2, copy
 from .utils import extract_to_image
-import time
-import traceback
 from .analysis import (
     analyze_for_one_floor,
     analyze_for_combo,
@@ -13,11 +11,18 @@ from .analysis import (
 )
 
 def evaluate(request):
+    response = request.copy()
     img_name = os.path.basename(request["image_path"])
     img0 = cv2.imread( request['image_path'])
+
+    # if image path of request is wrong
+    if img0 is None:
+        response["evaluation_result"] = 0
+        response["reasons"]["OTHER"] = "PHOTOINVALID: Image not found\n"
+        return response
     img = copy.deepcopy(img0)
+
     # if image horizontal or invalid
-    response = request.copy()
     response["reasons"]["OTHER"] = "PHOTOINVALID: Không tìm thấy sản phẩm của SPVB" if len(response["details"]["detections"])==0 else ""
     if response["reasons"]["OTHER"]=="": boxes, index_dict = get_boxes_and_indices(response)
     if response["reasons"]["OTHER"]=="": boxes, response = handle_too_few_case(boxes, index_dict, response)
@@ -48,7 +53,10 @@ def evaluate(request):
     # Extract to image and json
     img = extract_to_image(img, response)
     response.pop("message")
-    response["result_image_path"] = os.path.join("samples/results", img_name)
+    dir_name = "samples/results"
+    response["result_image_path"] = os.path.join(dir_name, img_name)
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
     cv2.imwrite(response["result_image_path"], img)
     print(f"Done for {response['result_image_path']}")
     return response
