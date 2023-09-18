@@ -50,8 +50,11 @@ class ImageResult(BaseModel):
     reasons: Reason
     tenant_id: str
 
-class ImageFolderRequest(BaseModel):
+class YoloRequest(BaseModel):
     img_dir: str # '../samples/images/'
     img_size: int # 640
     extensions: List[str] # ["*.jpg", "*.png", "*.jpeg"]
     model: str # 'rack0821.pt'
+
+class DetectionRequest(BaseModel):
+    json_path: str

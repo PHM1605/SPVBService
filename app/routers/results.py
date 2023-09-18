@@ -1,15 +1,22 @@
-from ..models import ImageResult
-from fastapi import APIRouter
-from typing import List
+import json
+from ..models import DetectionRequest, ImageResult
+from fastapi import APIRouter, HTTPException, status
 from ml_utils import evaluation_spvb, utils
 
 router = APIRouter()
 
-@router.get("/images_results")
-async def get_results(request: List[ImageResult]):
+@router.get("/eval_results")
+async def get_results(request: DetectionRequest):
+    request = request.model_dump()
+    try:
+        with open(request["json_path"]) as f:
+            request = json.load(f)
+    except:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"File requested {request['json_path']} not found!")
+    
     response = []
-    for i, one_img_request in enumerate(request):
-        one_img_response = evaluation_spvb.evaluate(one_img_request.model_dump())
+    for one_img_request in request:
+        one_img_response = evaluation_spvb.evaluate(one_img_request)
         response.append(one_img_response)
     file_name = utils.export_to_xlsx(response)
     return f"Export to {file_name}"

@@ -1,5 +1,7 @@
 /minenv
-/samples
+/samples/backup
+/samples/images
+/samples/results
 /__pycache__
 .env
 /app/__pycache__
