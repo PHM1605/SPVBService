@@ -9,6 +9,7 @@ from .analysis import (
     get_boxes_and_indices,
     handle_too_few_case
 )
+from fastapi import HTTPException, status
 
 def evaluate(request):
     response = request.copy()
@@ -17,9 +18,7 @@ def evaluate(request):
 
     # if image path of request is wrong
     if img0 is None:
-        response["evaluation_result"] = 0
-        response["reasons"]["OTHER"] = "PHOTOINVALID: Image not found\n"
-        return response
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image path is incorrect")
     img = copy.deepcopy(img0)
 
     # if image horizontal or invalid
