@@ -8,7 +8,7 @@ router = APIRouter(prefix="/images")
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.ImageResponse)
 def create_image(image: schemas.ImageCreate, db: Session = Depends(get_db), 
-                 current_user: int = Depends(oauth2.get_current_user)):
+                 current_user = Depends(oauth2.get_current_user)):
     new_image = models.Image(**image.model_dump())
     db.add(new_image)
     db.commit()
@@ -17,13 +17,13 @@ def create_image(image: schemas.ImageCreate, db: Session = Depends(get_db),
 
 @router.get("/", response_model = List[schemas.ImageResponse])
 def get_images(db: Session = Depends(get_db), 
-               current_user: int = Depends(oauth2.get_current_user)):
+               current_user = Depends(oauth2.get_current_user)):
     images = db.query(models.Image).all()
     return images
 
 @router.get("/{id}", response_model = schemas.ImageResponse)
 def get_image(id: int, db: Session = Depends(get_db), 
-              current_user: int = Depends(oauth2.get_current_user)):
+              current_user = Depends(oauth2.get_current_user)):
     image = db.query(models.Image).filter(models.Image.image_id == id).first()
     if not image:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Image with id {id} was not found")
@@ -31,7 +31,7 @@ def get_image(id: int, db: Session = Depends(get_db),
 
 @router.put("/{id}", response_model = schemas.ImageResponse)
 def update_image(id:int, updated_image: schemas.ImageUpdate, db:Session = Depends(get_db), 
-                 current_user: int = Depends(oauth2.get_current_user)):
+                 current_user = Depends(oauth2.get_current_user)):
     img_query = db.query(models.Image).filter(models.Image.image_id==id)
     image = img_query.first()
     if image == None:
@@ -42,7 +42,7 @@ def update_image(id:int, updated_image: schemas.ImageUpdate, db:Session = Depend
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id: int, db: Session = Depends(get_db), 
-                current_user: int = Depends(oauth2.get_current_user)):
+                current_user = Depends(oauth2.get_current_user)):
     img_query = db.query(models.Image).filter(models.Image.image_id == id)
     
     if img_query.first() == None:

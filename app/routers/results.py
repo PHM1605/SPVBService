@@ -1,12 +1,13 @@
 import json
-from ..models import DetectionRequest, ImageResult
-from fastapi import APIRouter, HTTPException, status
+from .. import oauth2, schemas
+from ..schemas import ResultRequest, ResultModel
+from fastapi import APIRouter, Depends, HTTPException, status
 from ml_utils import evaluation_spvb, utils
 
 router = APIRouter()
 
-@router.get("/eval_results")
-async def get_results(request: DetectionRequest):
+@router.get("/eval_results", status_code=status.HTTP_200_OK, response_model=schemas.ResultResponse)
+async def get_results(request: ResultRequest, current_user=Depends(oauth2.get_current_user)):
     request = request.model_dump()
     try:
         with open(request["json_path"]) as f:
@@ -20,8 +21,3 @@ async def get_results(request: DetectionRequest):
         response.append(one_img_response)
     file_name = utils.export_to_xlsx(response)
     return f"Export to {file_name}"
-
-@router.get("/image_results")
-async def get_results(request: ImageResult):
-    response = evaluation_spvb.evaluate(request.model_dump())
-    return response
