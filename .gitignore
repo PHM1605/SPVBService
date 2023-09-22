@@ -1,8 +1,9 @@
+.env
+/__pycache__
+/app/routers/__pycache__
 /minenv
+/ml_utils/__pycache__
 /samples/backup
 /samples/images
 /samples/results
-/__pycache__
-.env
-/app/__pycache__
 /yolo_extract/rack0821.pt

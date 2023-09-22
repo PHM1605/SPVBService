@@ -1,4 +1,3 @@
-# newest version 16.06.23: thêm thông báo số tầng phát hiện khi lỗi; chỉnh tủ combo: nếu đủ tủ sẽ cộng tầng.
 import cv2, copy, itertools, scipy, math
 from .models import BoundingBox
 import numpy as np
@@ -49,7 +48,7 @@ def add_floor_for_one_floor(boxes, index_dict, img):
     index_dict["shelf"].append(len(boxes) - 1)
     return boxes, index_dict
 
-def add_floor_for_normal(boxes, index_dict, img, result_dict):
+def add_floor_for_normal(boxes, index_dict):
     # we only add when the new shelf not overlap and distance between the new and the old is big enough
     def should_add(box, added_box):
         if (
@@ -130,20 +129,20 @@ def add_floor_for_combo(boxes, index_dict):
 def analyze_for_one_floor(boxes, index_dict, img, result_dict):
     boxes, index_dict = add_floor_for_one_floor(boxes, index_dict, img)
     if len(index_dict["shelf"]) != 1:
-        result_dict["issue"] = f"LACKOFFLOOR: Tủ 1 tầng nhưng phát hiện {len(index_dict['shelf'])} tầng.\nVui lòng liên hệ NVBH hoặc tổng đài hỗ trợ 18001250"
+        result_dict["reasons"]["OTHER"] = f"LACKOFFLOOR: Tủ 1 tầng nhưng phát hiện {len(index_dict['shelf'])} tầng.\nVui lòng liên hệ NVBH hoặc tổng đài hỗ trợ 18001250"
         result_dict["evaluation_result"] = 0
-        return boxes, index_dict, result_dict
+        return result_dict
     
-    if result_dict["issue"] == "":
-        list_bottles = assign_shelves(boxes, index_dict, result_dict)
-        list_missing, list_nonspvb = get_list_missing_nonspvb(list_bottles, index_dict, result_dict)
-        result_dict = update_statistics(list_missing, list_nonspvb)
-    return boxes, index_dict, result_dict
+    if result_dict["reasons"]["OTHER"] == "":
+        list_bottles = assign_shelves(boxes, index_dict)
+        list_missing, list_nonspvb = get_list_missing_nonspvb(list_bottles, boxes, index_dict, result_dict)
+        result_dict = update_statistics(list_bottles, list_missing, list_nonspvb, result_dict)
+    return result_dict
 
 def analyze_for_normal(boxes, index_dict, img, result_dict):
     boxes, index_dict = add_floor_for_normal(boxes, index_dict, img, result_dict)
     if len(index_dict["shelf"]) == result_dict["number_of_floor"]:
-        if not result_dict["consider_last_shelf"]:
+        if not result_dict["consider_last_floor"]:
             index_dict["shelf_excluded"] = [index_dict["shelf"][-1]]
             index_dict = remove_low_boxes(boxes, index_dict, index_dict["shelf"][-2])
         else:
@@ -152,15 +151,15 @@ def analyze_for_normal(boxes, index_dict, img, result_dict):
         index_dict = remove_low_boxes(boxes, index_dict, index_dict["shelf"][-1])
     else:
         if "shelf_excluded" in index_dict.keys():
-            result_dict["issue"] = f"LACKOFFLOOR: Tủ {result_dict['number_of_floor']} tầng nhưng phát hiện {len(index_dict['shelf']) + 1} tầng.\nVui lòng liên hệ NVBH hoặc tổng đài hỗ trợ 18001250"
+            result_dict["reasons"]["OTHER"] = f"LACKOFFLOOR: Tủ {result_dict['number_of_floor']} tầng nhưng phát hiện {len(index_dict['shelf']) + 1} tầng.\nVui lòng liên hệ NVBH hoặc tổng đài hỗ trợ 18001250"
         else:
-            result_dict["issue"] = f"LACKOFFLOOR: Tủ {result_dict['number_of_floor']} tầng nhưng phát hiện {len(index_dict['shelf'])} tầng.\nVui lòng liên hệ NVBH hoặc tổng đài hỗ trợ 18001250"
+            result_dict["reasons"]["OTHER"] = f"LACKOFFLOOR: Tủ {result_dict['number_of_floor']} tầng nhưng phát hiện {len(index_dict['shelf'])} tầng.\nVui lòng liên hệ NVBH hoặc tổng đài hỗ trợ 18001250"
         result_dict["evaluation_result"] = 0
     
-    if result_dict["issue"] == "":
-        list_bottles = assign_shelves(boxes, index_dict, result_dict)
-        list_missing, list_nonspvb = get_list_missing_nonspvb(list_bottles, index_dict, result_dict)
-        result_dict = update_statistics(list_missing, list_nonspvb, result_dict)
+    if result_dict["reasons"]["OTHER"] == "":
+        list_bottles = assign_shelves(boxes, index_dict)
+        list_missing, list_nonspvb = get_list_missing_nonspvb(list_bottles, boxes, index_dict, result_dict)
+        result_dict = update_statistics(list_bottles, list_missing, list_nonspvb, result_dict)
     return result_dict
     
 def analyze_for_combo(boxes, index_dict, result_dict):
@@ -168,17 +167,17 @@ def analyze_for_combo(boxes, index_dict, result_dict):
     if len(index_dict["shelf"]) >= 3:
         index_dict = remove_low_boxes(boxes, index_dict, index_dict["shelf"][-1])
     else:
-        result_dict["issue"] = f"LACKOFFLOOR: Tủ {result_dict['number_of_floor']-1} tầng + 1 ngăn combo, phát hiện {len(index_dict['shelf'])} tầng.\nVui lòng liên hệ NVBH hoặc tổng đài hỗ trợ 18001250"
+        result_dict["reasons"]["OTHER"] = f"LACKOFFLOOR: Tủ {result_dict['number_of_floor']-1} tầng + 1 ngăn combo, phát hiện {len(index_dict['shelf'])} tầng.\nVui lòng liên hệ NVBH hoặc tổng đài hỗ trợ 18001250"
         result_dict["evaluation_result"] = 0
-    list_bottles = assign_shelves(boxes, index_dict["shelf"], index_dict["bottle"], distance_threshold=1)
-    if result_dict["issue"] == "":
-        list_bottles = assign_shelves(boxes, index_dict, result_dict)
-        list_missing, list_nonspvb = get_list_missing_nonspvb(list_bottles, index_dict, result_dict)
-        result_dict = update_statistics(list_missing, list_nonspvb, result_dict)
+    list_bottles = assign_shelves(boxes, index_dict)
+    if result_dict["reasons"]["OTHER"] == "":
+        list_bottles = assign_shelves(boxes, index_dict)
+        list_missing, list_nonspvb = get_list_missing_nonspvb(list_bottles, boxes, index_dict, result_dict)
+        result_dict = update_statistics(list_bottles, list_missing, list_nonspvb, result_dict)
     return result_dict
 
 def analyze_for_rack(boxes, index_dict, result_dict):
-    list_bottles = assign_shelves(boxes, index_dict, result_dict)
+    list_bottles = assign_shelves(boxes, index_dict)
     list_missing, list_nonspvb = get_list_missing_nonspvb(list_bottles, boxes, index_dict, result_dict)
     result_dict = update_statistics(list_bottles, list_missing, list_nonspvb, result_dict)
     return result_dict
@@ -194,19 +193,19 @@ def get_boxes_and_indices(result_dict):
 
 def handle_too_few_case(boxes, index_dict, result_dict):    
     if len(index_dict["bottle"]) == 0:
-        result_dict["issue"] = "PHOTOINVALID: Không tìm thấy sản phẩm của SPVB"
+        result_dict["reasons"]["OTHER"] = "PHOTOINVALID: Không tìm thấy sản phẩm của SPVB"
         return boxes, result_dict
         
     if result_dict["posm_type"] == "RACK":
         if len(index_dict["shelf"]) < 3:
-            result_dict["issue"] = "PHOTOINVALID: Không tìm thấy sản phẩm của SPVB"
+            result_dict["reasons"]["OTHER"] = "PHOTOINVALID: Không tìm thấy sản phẩm của SPVB"
             result_dict["evaluation_result"] = 0
         return boxes, result_dict
-    else: # VSC
+    else: # VC
         if len(index_dict["fridge"]) == 0:
             result_dict["is_full_posm"] == 0
-            if result_dict["is_one_floor"] or result_dict["consider_full_fridge"]:
-                result_dict["issue"] = "PHOTOINVALID: Không nhận dạng đủ 4 cạnh Tủ lạnh. Vui lòng chụp lại."
+            if result_dict["is_one_floor"] or result_dict["consider_full_posm"]:
+                result_dict["reasons"]["OTHER"] = "PHOTOINVALID: Không nhận dạng đủ 4 cạnh Tủ lạnh. Vui lòng chụp lại."
                 result_dict["evaluation_result"] = 0
                 return boxes, result_dict
         else:
@@ -216,7 +215,7 @@ def handle_too_few_case(boxes, index_dict, result_dict):
             if result_dict["classes"][boxes[index_dict["fridge"][0]].label] == "POSM_VSC_1F":
                 result_dict["is_one_floor"] = 1
             else:
-                result_dict["issue"] = "PHOTOINVALID: Không tìm thấy sản phẩm của SPVB"
+                result_dict["reasons"]["OTHER"] = "PHOTOINVALID: Không tìm thấy sản phẩm của SPVB"
                 result_dict["evaluation_result"] = 0
         return boxes, result_dict
 
@@ -236,7 +235,7 @@ def preprocessing_boxes(boxes, index_dict, posm_type):
     return boxes, index_dict
 
 # which bottles belong to which shelves
-def assign_shelves(boxes, index_dict, result_dict):
+def assign_shelves(boxes, index_dict):
     ret = {}
     distance_threshold = 1
     flag = [True for _ in range(len(index_dict["bottle"]))]
@@ -264,15 +263,16 @@ def get_list_missing_nonspvb(list_bottles, boxes, index_dict, result_dict):
         list_bottles_one_shelf["Main layer"].sort(key=lambda box: box.x1)
         shelf = boxes[index_dict["shelf"][shelf_idx]]
         
-        if result_dict["posm_type"] == "vscooler":
-            flag = False if result_dict["consider_last_shelf"] and index_dict["shelf"][shelf_idx] == index_dict["shelf"][-1] else True
-        else:
-            flag = True
+        is_missing_analyze = True
+        if result_dict["posm_type"] == "VC":
+            if result_dict["consider_last_floor"] == 1 and index_dict["shelf"][shelf_idx] == index_dict["shelf"][-1]:
+                is_missing_analyze = False
+
         missing, nonspvb = check_missing_nonspvb_oneshelf(list_bottles_one_shelf, 
-                                                           shelf, 
-                                                           boxes[index_dict["fridge"][0]] if len(index_dict["fridge"]) > 0 else None,
-                                                           is_missing_analyze = flag, 
-                                                           result_dict=result_dict)
+                                                          shelf, 
+                                                          boxes[index_dict["fridge"][0]] if len(index_dict["fridge"]) > 0 else None,
+                                                          is_missing_analyze = is_missing_analyze, 
+                                                          result_dict=result_dict)
         floor = f"F{shelf_idx + 1}"
         if len(missing) > 0: list_missing.update({floor: missing})
         if len(nonspvb) > 0: list_nonspvb.update({floor: nonspvb})
@@ -318,6 +318,7 @@ def update_statistics(list_bottles, list_missing, list_nonspvb, result_dict):
             
 # check bottles on one shelf; return list of missing and non-spvb
 def check_missing_nonspvb_oneshelf(bottles, shelf, fridge, is_missing_analyze, result_dict):
+
     list_missing, list_nonspvb = [], []
     for bottle in bottles["Main layer"] + bottles["Sublayer"]:
         if bottle.label == result_dict["classes"].index('NON_SPVB'):  # non spvb
@@ -354,12 +355,12 @@ def check_missing_nonspvb_oneshelf(bottles, shelf, fridge, is_missing_analyze, r
                     BoundingBox(x_loc, average_y, x_loc + average_width, average_y + average_height, 1.0, -1)
                 )
         # in case of 1-floor fridge, postprocess the purity standard
-        if result_dict["posm_type"] == "vscooler" and result_dict['is_one_floor']:
+        if result_dict["posm_type"] == "VC" and result_dict['is_one_floor']==1:
             # remove missing slots at the end of the shelf
             if (len(bottles["Main layer"]) >= 5):  # only remove when there is enough bottles (e.g. 8 bottles)
                 list_missing = [
                     missing_slot
-                    for i, missing_slot in enumerate(list_missing)
+                    for missing_slot in list_missing
                     if missing_slot.x1 > bottles["Main layer"][0].x1
                     and missing_slot.x2 < bottles["Main layer"][-1].x2
                 ]
@@ -373,7 +374,6 @@ def check_missing_nonspvb_oneshelf(bottles, shelf, fridge, is_missing_analyze, r
                 list_missing.append(
                     BoundingBox(fridge.x1, shelf.y2 - average_height, shelf.x1, shelf.y2, 1.0, -1)
                 )
-
     return list_missing, list_nonspvb            
 
 def remove_low_boxes(boxes, index_dict, lowest_shelf_idx):

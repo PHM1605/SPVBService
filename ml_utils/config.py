@@ -14,8 +14,8 @@ config = {
     "is_full_posm": -1, # OUTPUT: 1/0/-1
     "is_one_floor": -1, # OUTPUT: 1/0/-1
     "message": "", # OUTPUT: display on image
-    "number_of_floor": -1, # INPUT: -1 for rack; number_of_floor for vsc
-    "posm_type": "rack", # "INPUT": "vsc"/"rack"
+    "number_of_floor": -1, # INPUT: -1 for rack; number_of_floor for VC
+    "posm_type": "RACK", # "INPUT": "VC"/"RACK"
     "program_code": "1000015166_KHTRUNGBAY", # INPUT: e.g. "1000015166_KHTRUNGBAY"
     "reasons": {"NON_SPVB": [], "SPACE": [], "OTHER": ""}, # OUTPUT
     "tenant_id": "d15fce07-c944-400f-8701-06297320f37b", # e.g. "d15fce07-c944-400f-8701-06297320f37b"
