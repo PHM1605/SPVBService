@@ -1,6 +1,7 @@
 import copy, cv2, os, glob, json, torch
 import numpy as np
 from .config import config 
+from ml_utils.analysis import get_boxes_and_indices, remove_overlap_boxes
 from yolo_extract.models.experimental import attempt_load
 from yolo_extract.utils.datasets import letterbox
 from utils.general import non_max_suppression, scale_coords
@@ -16,6 +17,7 @@ def extract(request):
         one_img_config["image_path"] = img_path
         one_img_config["classes"] = model.names
         img0 = cv2.imread(img_path) # BGR
+        one_img_config["image_shape"] = img0.shape
         img = letterbox(img0, request["img_size"], stride = int(model.stride.max()))[0]
         img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x640x640
         img = np.ascontiguousarray(img)
@@ -38,6 +40,7 @@ def extract(request):
             one_img_config["details"]["detections"].append(pr_cvt)
         response.append(one_img_config)
         print(f"Done for {os.path.basename(img_path)}")
+
     with open("samples/images_result.json", "w") as f:
         json.dump(response, f, ensure_ascii=True)
     return response

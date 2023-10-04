@@ -1,3 +1,4 @@
+# newest version 16.06.23: thêm thông báo số tầng phát hiện khi lỗi; chỉnh tủ combo: nếu đủ tủ sẽ cộng tầng.
 import cv2, copy, itertools, scipy, math
 from .models import BoundingBox
 import numpy as np
@@ -191,23 +192,24 @@ def get_boxes_and_indices(result_dict):
     boxes, index_dict = preprocessing_boxes(boxes, index_dict, posm_type = result_dict["posm_type"])
     return boxes, index_dict
 
-def handle_too_few_case(boxes, index_dict, result_dict):    
+def handle_too_few_case(boxes, index_dict, result_dict): 
     if len(index_dict["bottle"]) == 0:
         result_dict["reasons"]["OTHER"] = "PHOTOINVALID: Không tìm thấy sản phẩm của SPVB"
-        return boxes, result_dict
+        result_dict["evaluation_result"] = 0
+        return result_dict
         
     if result_dict["posm_type"] == "RACK":
         if len(index_dict["shelf"]) < 3:
             result_dict["reasons"]["OTHER"] = "PHOTOINVALID: Không tìm thấy sản phẩm của SPVB"
             result_dict["evaluation_result"] = 0
-        return boxes, result_dict
+        return result_dict
     else: # VC
         if len(index_dict["fridge"]) == 0:
             result_dict["is_full_posm"] == 0
             if result_dict["is_one_floor"] or result_dict["consider_full_posm"]:
                 result_dict["reasons"]["OTHER"] = "PHOTOINVALID: Không nhận dạng đủ 4 cạnh Tủ lạnh. Vui lòng chụp lại."
                 result_dict["evaluation_result"] = 0
-                return boxes, result_dict
+                return result_dict
         else:
             result_dict["is_full_posm"] == 1
         
@@ -217,7 +219,7 @@ def handle_too_few_case(boxes, index_dict, result_dict):
             else:
                 result_dict["reasons"]["OTHER"] = "PHOTOINVALID: Không tìm thấy sản phẩm của SPVB"
                 result_dict["evaluation_result"] = 0
-        return boxes, result_dict
+        return result_dict
 
 def preprocessing_boxes(boxes, index_dict, posm_type):
     boxes = remove_overlap_boxes(
@@ -425,7 +427,6 @@ def remove_overlap_boxes(boxes, exclude_indices):
                 flag[j] = False
     return [boxes[i] for i in range(len(boxes)) if flag[i]]
 
-
 def remove_boxes_outside_fridge(boxes, index_dict):
     if len(index_dict["fridge"]) > 0:
         removed_indices = []
@@ -435,7 +436,6 @@ def remove_boxes_outside_fridge(boxes, index_dict):
 
         boxes = [box for i, box in enumerate(boxes) if i not in removed_indices]
     return boxes
-
 
 def sort_upper_to_lower(boxes, indices):
     list_boxes = [(idx, boxes[idx]) for idx in indices]
@@ -453,3 +453,12 @@ def calculate_overlap(box1, box2):
     else:
         return 0
 
+def calculate_iou(box1, box2):
+    a, b = box1, box2
+    dx = min(a.x2, b.x2) - max(a.x1, b.x1)
+    dy = min(a.y2, b.y2) - max(a.y1, b.y1)
+    intersection = dx * dy
+    if dx >= 0 and dy >= 0:
+        return dx * dy / (a.area + b.area - intersection)
+    else:
+        return 0

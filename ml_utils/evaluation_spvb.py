@@ -13,8 +13,11 @@ from .analysis import (
 )
 
 def evaluate(request):
-    img_name = request['image_path']
-    img0 = cv2.imread(img_name)
+    img_name = os.path.basename(request['image_path'])
+    dir_name = "samples/results"
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
+    img0 = cv2.imread(request["image_path"])
     img = copy.deepcopy(img0)
     
     # if image horizontal or invalid
@@ -27,7 +30,7 @@ def evaluate(request):
         response["reasons"]["OTHER"] = ""
 
     if response["reasons"]["OTHER"]=="": boxes, index_dict = get_boxes_and_indices(response)
-    if response["reasons"]["OTHER"]=="": boxes, response = handle_too_few_case(boxes, index_dict, response)
+    if response["reasons"]["OTHER"]=="": response = handle_too_few_case(boxes, index_dict, response)
     # check skewness
     if response["reasons"]["OTHER"] == "":
         if check_image_skewness(boxes, index_dict["shelf"], mode="overlap"):
@@ -64,10 +67,11 @@ def evaluate(request):
     # Extract to image and json
     img = extract_to_image(img, response)
     response.pop("message")
+    response["result_image_path"] = os.path.join(dir_name, img_name)
     if response["evaluation_result"] == 1:
-        response["result_image_path"] = response["result_image_path"].split('.')[0] + "_ok.jpg"
+        response["result_image_path"] = response["result_image_path"].split('.')[0] + "_output_ok.jpg"
     else:
-        response["result_image_path"] = response["result_image_path"].split('.')[0] + "_notok.jpg"
+        response["result_image_path"] = response["result_image_path"].split('.')[0] + "_output_notok.jpg"
     cv2.imwrite(response["result_image_path"], img)
     print(f"Done for {response['result_image_path']}")
     return response

@@ -3,7 +3,6 @@
 /app/routers/__pycache__
 /minenv
 /ml_utils/__pycache__
-/samples/backup
-/samples/images
-/samples/results
-/yolo_extract/rack0821.pt
+/samples
+/yolo_extract/*.pt
+/yolo_extract/__pycache__

@@ -1,6 +1,7 @@
 import os, cv2, copy
 import numpy as np
 import pandas as pd
+from .indices import get_thresholds
 from PIL import ImageFont, ImageDraw, Image
 
 def draw_result(img, boxes, color, put_percent, put_label=False):
@@ -18,37 +19,29 @@ def draw_result(img, boxes, color, put_percent, put_label=False):
 
 def extract_to_image(img, response):
     detections = response["details"]["detections"]
-    result = response["details"]["result"]
-    
+    result = []
+    for floor in response["details"]["result"]:
+        for item in response["details"]["result"][floor]:
+            result += response["details"]["result"][floor][item]
     # draw all as gray
     img = draw_result(img, detections, color=(192,192,192), put_percent=True)
-    # draw posm as blue
-    img = draw_result(img, get_boxes_of_labels(result, ["POSM_VSC_SPLIT_LINE", "POSM_RACK_CVS_3F", "POSM_RACK_CVS_4F", "POSM_RACK_CVS_5F"]), 
-                                               color=(255,0,0), put_percent=False, put_label=False)
+    # draw posm and split lines as blue
+    low_thr, up_thr = get_thresholds(response["posm_type"], "fridge")
+    img = draw_result(img, get_boxes_of_labels(detections, list(range(low_thr, up_thr+1))), color=(255,0,0), put_percent=False, put_label=False)
+    low_thr, up_thr = get_thresholds(response["posm_type"], "shelf")
+    img = draw_result(img, get_boxes_of_labels(detections, list(range(low_thr, up_thr+1))), color=(255,0,0), put_percent=False, put_label=False)
     # draw bottles as green
-    img = draw_result(img, get_boxes_exclude_labels(result, ["SPACE", "NON_SPVB"]), color=(0,255,0), put_percent=True)
-    # draw space as red
-    img = draw_result(img, get_boxes_of_labels(result, ["SPACE"]), color=(0,0,255), put_percent=True)
+    low_thr, up_thr = get_thresholds(response["posm_type"], "bottle")
+    img = draw_result(img, get_boxes_of_labels(result, list(range(low_thr, up_thr+1))), color=(0,255,0), put_percent=True)
     # draw nonspvb as purple
-    img = draw_result(img, get_boxes_of_labels(result, ["NON_SPVB"]), color=(255,0,255), put_percent=True)
+    img = draw_result(img, get_boxes_of_labels(result, [up_thr]), color=(255,0,255), put_percent=True)
+    # draw space as red
+    img = draw_result(img, get_boxes_of_labels(result, [-1]), color=(0,0,255), put_percent=True)
     img = put_text(img, response["message"], loc=[10,10])
     return img
 
-def get_boxes_of_labels(dict_labels, labels):
-    ret = []
-    for floor in dict_labels:
-        for item in dict_labels[floor]:
-            if item in labels:
-                ret += dict_labels[floor][item]
-    return ret
-
-def get_boxes_exclude_labels(dict_labels, labels):
-    ret = []
-    for floor in dict_labels:
-        for item in dict_labels[floor]:
-            if item not in labels:
-                ret += dict_labels[floor][item]
-    return ret
+def get_boxes_of_labels(boxes, labels):
+    return [box for box in boxes if box[-1] in labels]
 
 # get result dictionary of one image
 def get_result_dict(img_path, total_result_dict):
@@ -92,7 +85,7 @@ def convert_to_list_of_reasons(reasons):
     return ret
 
 def export_to_xlsx(response):
-    file_name = "samples/audit_result.xlsx"
+    file_name = "samples/results/audit_result.xlsx"
     image_names = [os.path.basename(r["image_path"]) for r in response]
     results = [r["evaluation_result"] for r in response]
     reasons = [convert_to_list_of_reasons(r["reasons"]) for r in response]

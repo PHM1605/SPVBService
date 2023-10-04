@@ -1,12 +1,13 @@
-import json
+import json, os
 from .. import oauth2, schemas
-from ..schemas import ResultRequest, ResultModel
+from ..schemas import ResultRequest
 from fastapi import APIRouter, Depends, HTTPException, status
 from ml_utils import evaluation_spvb, utils
+from typing import List
 
 router = APIRouter()
 
-@router.get("/eval_results", status_code=status.HTTP_200_OK, response_model=schemas.ResultResponse)
+@router.get("/eval_results", status_code=status.HTTP_200_OK, response_model=List[schemas.ResultResponse])
 async def get_results(request: ResultRequest, current_user=Depends(oauth2.get_current_user)):
     request = request.model_dump()
     try:
@@ -20,4 +21,4 @@ async def get_results(request: ResultRequest, current_user=Depends(oauth2.get_cu
         one_img_response = evaluation_spvb.evaluate(one_img_request)
         response.append(one_img_response)
     file_name = utils.export_to_xlsx(response)
-    return f"Export to {file_name}"
+    return response
