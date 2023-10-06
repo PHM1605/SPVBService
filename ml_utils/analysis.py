@@ -199,6 +199,7 @@ def handle_too_few_case(boxes, index_dict, result_dict):
         return result_dict
         
     if result_dict["posm_type"] == "RACK":
+        print("INDEX SHELF: ", index_dict["shelf"])
         if len(index_dict["shelf"]) < 3:
             result_dict["reasons"]["OTHER"] = "PHOTOINVALID: Không tìm thấy sản phẩm của SPVB"
             result_dict["evaluation_result"] = 0

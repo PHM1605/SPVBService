@@ -23,9 +23,12 @@ def clean_output_yolo(input_format):
         detections = []
         for ibox, box in enumerate(boxes):
             max_iou, idx_max_box = max_iou_box_and_boxes(box, ibox, boxes)
+            # print("MAX IOU: ", max_iou)
             # choose box with bigger probability
             if max_iou < 0.9 or (max_iou >= 0.9 and box[-2] > boxes[idx_max_box][-2]):
                 cl = box[-1]
+                if cl in range(84, 91):
+                    continue
                 w = (box[2] - box[0]) / detection["image_shape"][1]
                 h = (box[3] - box[1]) / detection["image_shape"][0]
                 cen_x = (box[0] + box[2]) / 2 / detection["image_shape"][1]
