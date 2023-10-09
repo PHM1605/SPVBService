@@ -1,6 +1,6 @@
-.env
 /__pycache__
 /app/routers/__pycache__
+/environments
 /minenv
 /ml_utils/__pycache__
 /samples

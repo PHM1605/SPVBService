@@ -1,4 +1,5 @@
 from . import models
+from .config import settings
 from .database import engine
 from .routers import auth, images, results, users, yolo
 from fastapi import FastAPI
