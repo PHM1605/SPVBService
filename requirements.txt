@@ -7,6 +7,7 @@ charset-normalizer==3.2.0
 click==8.1.6
 colorama==0.4.6
 contourpy==1.1.0
+cryptography
 cycler==0.11.0
 dnspython==2.4.2
 ecdsa==0.18.0

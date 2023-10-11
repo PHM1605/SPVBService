@@ -10,6 +10,8 @@ router = APIRouter()
 
 @router.get("/folder_extract", status_code=status.HTTP_200_OK, response_model=YoloResponse)
 def get_json(img_folder: YoloRequest, current_user = Depends(oauth2.get_current_user)):
+#def get_json(img_folder: YoloRequest):
+    print("AAAAA")
     response = extract_detection.extract(img_folder.model_dump())
 
     # ------------- to export in new format --------------------------
