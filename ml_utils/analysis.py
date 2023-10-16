@@ -5,7 +5,7 @@ import numpy as np
 from .indices import get_indices
 
 """ Add more floor for types of fridge"""
-def add_floor_for_one_floor(boxes, index_dict, img):
+def add_floor_for_one_floor(boxes, index_dict, img, result_dict):
     # when the fridge only has 1 floor
     def get_left_right_border(boxes, index_dict, img):
         img = copy.deepcopy(img)
@@ -47,9 +47,10 @@ def add_floor_for_one_floor(boxes, index_dict, img):
     added_box = BoundingBox(x1, int(fridge.y2 - bottle.h), x2, fridge.y2, 1.0, -1) # -1 means not yet in classes.txt file
     boxes.append(added_box)
     index_dict["shelf"].append(len(boxes) - 1)
-    return boxes, index_dict
+    result_dict["details"]["detections"].append([added_box.x1, added_box.y1, added_box.x2, added_box.y2, added_box.prob, added_box.label])
+    return boxes, index_dict, result_dict
 
-def add_floor_for_normal(boxes, index_dict):
+def add_floor_for_normal(boxes, index_dict, result_dict):
     # we only add when the new shelf not overlap and distance between the new and the old is big enough
     def should_add(box, added_box):
         if (
@@ -67,7 +68,8 @@ def add_floor_for_normal(boxes, index_dict):
         #if should_add(box, added_box):
         boxes.append(added_box)
         index_dict["shelf"].append(len(boxes) - 1)
-        return boxes, index_dict
+        result_dict["details"]["detections"].append([added_box.x1, added_box.y1, added_box.x2, added_box.y2, added_box.prob, added_box.label])
+        return boxes, index_dict, result_dict
 
     if len(index_dict["fridge"]) > 0:
         # if the gap between the lowest shelf and the fridge too big
@@ -79,15 +81,16 @@ def add_floor_for_normal(boxes, index_dict):
             if should_add(box, added_box):
                 boxes.append(added_box)
                 index_dict["shelf"].append(len(boxes) - 1)
+                result_dict["details"]["detections"].append([added_box.x1, added_box.y1, added_box.x2, added_box.y2, added_box.prob, added_box.label])
         # remove shelf if shelf is outside the fridge
         index_dict["shelf"] = [
             idx
             for idx in index_dict["shelf"]
             if calculate_overlap(boxes[idx], boxes[index_dict["fridge"][0]]) >= 0.3
         ]
-    return boxes, index_dict
+    return boxes, index_dict, result_dict
 
-def add_floor_for_combo(boxes, index_dict):
+def add_floor_for_combo(boxes, index_dict, result_dict):
     # we add when the new shelf not overlap and distance between the new and the old is big enough
     def should_add(box, added_box):
         if (
@@ -106,7 +109,8 @@ def add_floor_for_combo(boxes, index_dict):
         #if should_add(box, added_box):
         boxes.append(added_box)
         index_dict["shelf"].append(len(boxes) - 1)
-        return boxes, index_dict
+        result_dict["details"]["detections"].append([added_box.x1, added_box.y1, added_box.x2, added_box.y2, added_box.prob, added_box.label])
+        return boxes, index_dict, result_dict
     
     if len(index_dict["fridge"]) > 0:
         # if the gap between the lowest shelf and the fridge too big
@@ -118,17 +122,29 @@ def add_floor_for_combo(boxes, index_dict):
             if should_add(box, added_box):
                 boxes.append(added_box)
                 index_dict["shelf"].append(len(boxes) - 1)
+                result_dict["details"]["detections"].append([added_box.x1, added_box.y1, added_box.x2, added_box.y2, added_box.prob, added_box.label])
         # remove shelf if shelf is outside the fridge
         index_dict["shelf"] = [
             idx
             for idx in index_dict["shelf"]
             if calculate_overlap(boxes[idx], boxes[index_dict["fridge"][0]]) >= 0.3
         ]
-    return boxes, index_dict
+    return boxes, index_dict, result_dict
+
+def add_floor_for_rack(boxes, index_dict, result_dict):
+    # add box as bottle(s) is under the last shelf
+    lowest_loc = max([boxes[idx].y2 for idx in index_dict["bottle"]])
+    if lowest_loc > boxes[index_dict["shelf"][-1]].y2:
+        box = boxes[index_dict["shelf"][-1]]
+        added_box = BoundingBox(box.x1, int(lowest_loc - box.h / 2), box.x2, int(lowest_loc + box.h / 2), box.prob, box.label)
+        boxes.append(added_box)
+        index_dict["shelf"].append(len(boxes) - 1)
+        result_dict["details"]["detections"].append([added_box.x1, added_box.y1, added_box.x2, added_box.y2, added_box.prob, added_box.label])
+    return boxes, index_dict, result_dict
 
 """ Analysis part """
 def analyze_for_one_floor(boxes, index_dict, img, result_dict):
-    boxes, index_dict = add_floor_for_one_floor(boxes, index_dict, img)
+    boxes, index_dict, result_dict = add_floor_for_one_floor(boxes, index_dict, img)
     if len(index_dict["shelf"]) != 1:
         result_dict["reasons"]["OTHER"] = f"LACKOFFLOOR: Tủ 1 tầng nhưng phát hiện {len(index_dict['shelf'])} tầng.\nVui lòng liên hệ NVBH hoặc tổng đài hỗ trợ 18001250"
         result_dict["evaluation_result"] = 0
@@ -141,7 +157,7 @@ def analyze_for_one_floor(boxes, index_dict, img, result_dict):
     return result_dict
 
 def analyze_for_normal(boxes, index_dict, img, result_dict):
-    boxes, index_dict = add_floor_for_normal(boxes, index_dict, img, result_dict)
+    boxes, index_dict, result_dict = add_floor_for_normal(boxes, index_dict, img, result_dict)
     if len(index_dict["shelf"]) == result_dict["number_of_floor"]:
         if not result_dict["consider_last_floor"]:
             index_dict["shelf_excluded"] = [index_dict["shelf"][-1]]
@@ -164,7 +180,7 @@ def analyze_for_normal(boxes, index_dict, img, result_dict):
     return result_dict
     
 def analyze_for_combo(boxes, index_dict, result_dict):
-    boxes, index_dict = add_floor_for_combo(boxes, index_dict)
+    boxes, index_dict, result_dict = add_floor_for_combo(boxes, index_dict, result_dict)
     if len(index_dict["shelf"]) >= 3:
         index_dict = remove_low_boxes(boxes, index_dict, index_dict["shelf"][-1])
     else:
@@ -178,9 +194,18 @@ def analyze_for_combo(boxes, index_dict, result_dict):
     return result_dict
 
 def analyze_for_rack(boxes, index_dict, result_dict):
+    boxes, index_dict, result_dict = add_floor_for_rack(boxes, index_dict, result_dict)
     list_bottles = assign_shelves(boxes, index_dict)
-    list_missing, list_nonspvb = get_list_missing_nonspvb(list_bottles, boxes, index_dict, result_dict)
-    result_dict = update_statistics(list_bottles, list_missing, list_nonspvb, result_dict)
+    if len(index_dict["shelf"]) == 3:
+        # check if any shelf has more than 6 bottles -> big rack -> need minimum 4 floors instead of 3
+        for floor in list_bottles:
+            if len(list_bottles[floor]["Main layer"]) > 6:
+                result_dict["reasons"]["OTHER"] = "LACKOFFLOOR: Tủ 4 tầng nhưng phát hiện 3 tầng.\nVui lòng liên hệ NVBH hoặc tổng đài hỗ trợ 18001250"
+                result_dict["evaluation_result"] = 0
+
+    if result_dict["reasons"]["OTHER"] == "":
+        list_missing, list_nonspvb = get_list_missing_nonspvb(list_bottles, boxes, index_dict, result_dict)
+        result_dict = update_statistics(list_bottles, list_missing, list_nonspvb, result_dict)
     return result_dict
 
 """ Functions for use in all type of fridge"""
@@ -199,7 +224,6 @@ def handle_too_few_case(boxes, index_dict, result_dict):
         return result_dict
         
     if result_dict["posm_type"] == "RACK":
-        print("INDEX SHELF: ", index_dict["shelf"])
         if len(index_dict["shelf"]) < 3:
             result_dict["reasons"]["OTHER"] = "PHOTOINVALID: Không tìm thấy sản phẩm của SPVB"
             result_dict["evaluation_result"] = 0
@@ -380,17 +404,8 @@ def check_missing_nonspvb_oneshelf(bottles, shelf, fridge, is_missing_analyze, r
     return list_missing, list_nonspvb            
 
 def remove_low_boxes(boxes, index_dict, lowest_shelf_idx):
-    index_dict["shelf"] = [
-        idx
-        for idx in index_dict["shelf"]
-        if boxes[idx].y2 <= boxes[lowest_shelf_idx].y2
-    ]
-    index_dict["bottle"] = [
-        
-        idx
-        for idx in index_dict["bottle"]
-        if boxes[idx].y2 <= boxes[lowest_shelf_idx].y2
-    ]
+    index_dict["shelf"] = [idx for idx in index_dict["shelf"] if boxes[idx].y2 <= boxes[lowest_shelf_idx].y2]
+    index_dict["bottle"] = [idx for idx in index_dict["bottle"] if boxes[idx].y2 <= boxes[lowest_shelf_idx].y2]
     return index_dict
 
 # mode is "size" to check skewness via box size ration, "overlap" to check skewness via overlap

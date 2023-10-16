@@ -43,16 +43,16 @@ def evaluate(request):
         if response["posm_type"] == "VC":
             if response["is_one_floor"]==1:
                 response = analyze_for_one_floor(boxes, index_dict, img, response)
-                print("Analyze for one floor")
+                #print("Analyze for one floor")
             elif response["is_combo"]==1:
                 response = analyze_for_combo(boxes, index_dict, response)
-                print("Analyze for combo")
+                #print("Analyze for combo")
             else:
                 response = analyze_for_normal(boxes, index_dict, response)
-                print("Analyze for normal")
+                #print("Analyze for normal")
         else: # RACK
             response = analyze_for_rack(boxes, index_dict, response)
-            print("Analyze for rack")
+            #print("Analyze for rack")
         
     if response["evaluation_result"] == 1:
         if check_image_skewness( boxes, index_dict["shelf"], mode="size" ):
@@ -73,5 +73,6 @@ def evaluate(request):
     else:
         response["result_image_path"] = response["result_image_path"].split('.')[0] + "_output_notok.jpg"
     cv2.imwrite(response["result_image_path"], img)
+    #print("RESPONSE: ", response)
     print(f"Done for {response['result_image_path']}")
     return response

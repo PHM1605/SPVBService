@@ -28,6 +28,7 @@ def extract_to_image(img, response):
     # draw posm and split lines as blue
     low_thr, up_thr = get_thresholds(response["posm_type"], "fridge")
     img = draw_result(img, get_boxes_of_labels(detections, list(range(low_thr, up_thr+1))), color=(255,0,0), put_percent=False, put_label=False)
+    
     low_thr, up_thr = get_thresholds(response["posm_type"], "shelf")
     img = draw_result(img, get_boxes_of_labels(detections, list(range(low_thr, up_thr+1))), color=(255,0,0), put_percent=False, put_label=False)
     # draw bottles as green
