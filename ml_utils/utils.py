@@ -1,4 +1,4 @@
-import os, cv2, copy
+import os, cv2, copy, requests, shutil
 import numpy as np
 import pandas as pd
 from .indices import get_thresholds
@@ -88,8 +88,18 @@ def convert_to_list_of_reasons(reasons):
 def export_to_xlsx(response):
     file_name = "samples/results/audit_result.xlsx"
     image_names = [os.path.basename(r["image_path"]) for r in response]
+    image_out_names = [os.path.basename(r["result_image_path"]) for r in response]
     results = [r["evaluation_result"] for r in response]
     reasons = [convert_to_list_of_reasons(r["reasons"]) for r in response]
-    df = pd.DataFrame.from_dict({"image_name": image_names, "result": results, "reason": reasons})
+    df = pd.DataFrame.from_dict({"image_name": image_names, "image_out_name": image_out_names, "result": results, "reason": reasons})
     df.to_excel(file_name, sheet_name="Sheet1", index=False)
     return file_name
+
+def download_img_from_url(url):
+    #data = requests.get(url).content
+    file_name = url.split("/")[-1]
+    images_folder = os.path.join("samples", "images")
+    img_path = os.path.join(images_folder, file_name)
+    #with open(img_path, "wb") as f:
+    #    f.write(data)
+    return img_path

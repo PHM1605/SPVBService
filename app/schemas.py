@@ -78,10 +78,15 @@ class ResultResponse(BaseModel):
     tenant_id: str
 
 """ YOLO """
-class YoloRequest(BaseModel):
+class YoloFolderRequest(BaseModel):
     img_dir: str # '../samples/images/'
     img_size: int # 640
     extensions: List[str] # ["*.jpg", "*.png", "*.jpeg"]
+    model: str # 'rack0821.pt'
+
+class YoloFileRequest(BaseModel):
+    file_info: str # '../samples/SPVBTest.xlsx'
+    img_size: int # 640
     model: str # 'rack0821.pt'
 
 class YoloResponse(BaseModel):

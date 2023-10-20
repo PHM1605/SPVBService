@@ -55,7 +55,7 @@ def add_floor_for_normal(boxes, index_dict, result_dict):
     def should_add(box, added_box):
         if (
             calculate_overlap(box, added_box) < 0.1
-            and (added_box.y1 - box.y2) > boxes[index_dict["bottle"][-1]].h / 2
+            and (added_box.y1 - box.y2) > get_average_bottle_height(boxes, index_dict)/2
         ):
             return True
         else:
@@ -75,7 +75,7 @@ def add_floor_for_normal(boxes, index_dict, result_dict):
         # if the gap between the lowest shelf and the fridge too big
         if (
             boxes[index_dict["fridge"][0]].y2 - boxes[index_dict["shelf"][-1]].cen_y
-        ) > boxes[index_dict["bottle"][-1]].h:
+        ) > get_average_bottle_height(boxes, index_dict):
             box = boxes[index_dict["shelf"][-1]]
             added_box = BoundingBox(box.x1, int(boxes[index_dict["fridge"][0]].y2 - box.h), box.x2, int(boxes[index_dict["fridge"][0]].y2), box.prob, box.label)
             if should_add(box, added_box):
@@ -95,7 +95,7 @@ def add_floor_for_combo(boxes, index_dict, result_dict):
     def should_add(box, added_box):
         if (
             calculate_overlap(box, added_box) < 0.1
-            and (added_box.y1 - box.y2) > boxes[index_dict["bottle"][-1]].h / 5
+            and (added_box.y1 - box.y2) > get_average_bottle_height(boxes, index_dict)/2
         ):
             return True
         else:
@@ -116,7 +116,7 @@ def add_floor_for_combo(boxes, index_dict, result_dict):
         # if the gap between the lowest shelf and the fridge too big
         if (
             boxes[index_dict["fridge"][0]].y2 - boxes[index_dict["shelf"][-1]].cen_y
-        ) > boxes[index_dict["bottle"][-1]].h:
+        ) > get_average_bottle_height(boxes, index_dict):
             box = boxes[index_dict["shelf"][-1]]
             added_box = BoundingBox(box.x1, int(boxes[index_dict["fridge"][0]].y2 - box.h), box.x2, int(boxes[index_dict["fridge"][0]].y2), box.prob, box.label)
             if should_add(box, added_box):
@@ -156,8 +156,8 @@ def analyze_for_one_floor(boxes, index_dict, img, result_dict):
         result_dict = update_statistics(list_bottles, list_missing, list_nonspvb, result_dict)
     return result_dict
 
-def analyze_for_normal(boxes, index_dict, img, result_dict):
-    boxes, index_dict, result_dict = add_floor_for_normal(boxes, index_dict, img, result_dict)
+def analyze_for_normal(boxes, index_dict, result_dict):
+    boxes, index_dict, result_dict = add_floor_for_normal(boxes, index_dict, result_dict)
     if len(index_dict["shelf"]) == result_dict["number_of_floor"]:
         if not result_dict["consider_last_floor"]:
             index_dict["shelf_excluded"] = [index_dict["shelf"][-1]]
@@ -283,6 +283,9 @@ def assign_shelves(boxes, index_dict):
                     flag[bi] = False
     return ret
 
+def get_average_bottle_height(boxes, index_dict):
+    return np.mean([boxes[idx].h for idx in index_dict["bottle"]])
+
 def get_list_missing_nonspvb(list_bottles, boxes, index_dict, result_dict):
     list_missing, list_nonspvb = {}, {}
     for shelf_idx in range(len(index_dict["shelf"])):
@@ -335,7 +338,7 @@ def update_statistics(list_bottles, list_missing, list_nonspvb, result_dict):
     for floor in list_nonspvb:
         result_dict["evaluation_result"] = 0
         result_dict["details"]["result"][floor].update( {"NON_SPVB": [[box.x1, box.y1, box.x2, box.y2, box.prob, box.label] for box in list_nonspvb[floor]]} )
-        result_dict["reasons"]["NON_SPVB"].append(f"NON_SPVB: Sản phẩm không phải của SPVB ở tầng {floor}")
+        result_dict["reasons"]["NONSPVB"].append(f"NONSPVB: Sản phẩm không phải của SPVB ở tầng {floor}")
         if msg2 == "":
             msg2 = f"Sản phẩm không phải SPVB ở tầng {floor[-1]}"
         else:
